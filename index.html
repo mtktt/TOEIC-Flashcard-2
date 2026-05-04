@@ -18,41 +18,57 @@ h1 { color:#2b6cb0; }
 
 /* Card */
 .card-scene {
-  width:90%;
-  max-width:420px;
-  height:300px;
-  margin:20px auto;
-  perspective:1000px;
+  width: 90%;
+  max-width: 420px;
+  height: 300px;
+  margin: 20px auto;
+  perspective: 1000px;
+  position: relative; /* ✅ สำคัญ */
 }
 
+/* ===== INNER (แกนหมุน) ===== */
 .card-inner {
-  width:100%;
-  height:100%;
+  position: absolute;   /* ✅ lock position */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
   transition: transform 0.5s;
   transform-style: preserve-3d;
   transform-origin: center;
-  position: relative;
+
+  will-change: transform; /* ✅ smooth mobile */
 }
 
+/* ===== FLIP ===== */
 .card-scene.flipped .card-inner {
   transform: rotateY(180deg);
 }
 
+/* ===== CARD FACE ===== */
 .card-face {
-  position:absolute;
+  position: absolute;
   top: 0;
   left: 0;
-  width:100%;
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  border-radius:16px;
-  background:white;
-  backface-visibility:hidden;
-  box-shadow:0 4px 20px rgba(0,0,0,0.1);
-  padding:20px;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+
+  padding: 20px;
+
+  backface-visibility: hidden;
+
+  box-sizing: border-box; /* ✅ ตัวจบ drift */
 }
 
 .card-back {
