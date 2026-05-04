@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TOEIC Flashcards</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background:#f0f4f8;
+  text-align:center;
+  padding:20px;
+}
+
+h1 { color:#2b6cb0; }
+
+/* Card */
+.card-scene {
+  width:60%;
+  max-width:360px;
+  height:260px;
+  margin:20px auto;
+  perspective:1000px;
+}
+
+.card-inner {
+  width:100%;
+  height:100%;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+
+.card-scene.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position:absolute;
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  border-radius:16px;
+  background:white;
+  backface-visibility:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.1);
+  padding:20px;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+  background:#ebf8ff;
+}
+
+/* Text */
+#frontWord {
+  font-size:2.5rem;
+  font-weight:900;
+}
+
+#frontPart {
+  font-size:1rem;
+  color:#718096;
+  margin-top:6px;
+}
+
+#backDef {
+  font-size:1.3rem;
+  font-weight:700;
+}
+
+#backEx {
+  margin-top:10px;
+  color:#555;
+}
+
+/* Buttons */
+.btn-row {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  background: #f0f4f8;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+button {
+  flex:1;
+  max-width:120px;
+  padding:16px;
+  font-size:1.2rem;
+  font-weight:700;
+  border-radius:14px;
+}
+
+.btn-wrong { background:#fed7d7; }
+.btn-right { background:#c6f6d5; }
+.btn-skip { background:#e2e8f0; }
+
+.progress { margin:10px; }
+
+</style>
+
+</head>
+
+<body>
+
+<h1>📋 TOEIC Flashcards</h1>
+
+<div class="banner" id="banner"></div>
+
+<select id="setSelect"></select>
+
+<div class="progress" id="progressText"></div>
+
+<div class="card-scene" id="cardScene" onclick="flipCard()">
+  <div class="card-inner">
+
+```
+<div class="card-face">
+  <div id="frontWord"></div>
+  <div id="frontPart"></div>
+  <button onclick="speakWord(event)">🔊</button>
+</div>
+
+<div class="card-face card-back">
+  <div id="backDef"></div>
+  <div id="backEx"></div>
+</div>
+```
+
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="btn-wrong" onclick="answer(false)">✗</button>
+  <button class="btn-skip" onclick="nextCard()">→</button>
+  <button class="btn-right" onclick="answer(true)">✓</button>
+</div>
+
+<script>
+
+// ===== SAMPLE (replace with yours) =====
+const allCards = [
+
+// ===== TOEIC B1–B2 VOCAB (325 WORDS) =====
+
+{word:"ability",part:"noun",def:"skill to do something",ex:"Improve your ability"},
+{word:"accept",part:"verb",def:"to agree to receive",ex:"Accept the offer"},
+{word:"access",part:"noun",def:"right to use",ex:"Access the system"},
+{word:"accident",part:"noun",def:"unexpected event",ex:"Report the accident"},
+{word:"account",part:"noun",def:"financial record",ex:"Open an account"},
+{word:"achieve",part:"verb",def:"to reach a goal",ex:"Achieve success"},
+{word:"action",part:"noun",def:"something done",ex:"Take action"},
+{word:"activity",part:"noun",def:"task or action",ex:"Daily activity"},
+{word:"add",part:"verb",def:"to include",ex:"Add details"},
+{word:"address",part:"noun",def:"location",ex:"Office address"},
+
+{word:"adjust",part:"verb",def:"to change slightly",ex:"Adjust settings"},
+{word:"advise",part:"verb",def:"to give advice",ex:"Advise clients"},
+{word:"affect",part:"verb",def:"to influence",ex:"Weather affects sales"},
+{word:"afford",part:"verb",def:"to have enough money",ex:"Afford expenses"},
+{word:"agree",part:"verb",def:"to have same opinion",ex:"Agree on plan"},
+{word:"allow",part:"verb",def:"to permit",ex:"Allow access"},
+{word:"amount",part:"noun",def:"quantity",ex:"Large amount"},
+{word:"analyze",part:"verb",def:"to study carefully",ex:"Analyze data"},
+{word:"answer",part:"noun",def:"response",ex:"Provide answer"},
+{word:"apply",part:"verb",def:"to request",ex:"Apply for job"},
+
+{word:"arrive",part:"verb",def:"to reach",ex:"Arrive on time"},
+{word:"ask",part:"verb",def:"to request info",ex:"Ask questions"},
+{word:"assist",part:"verb",def:"to help",ex:"Assist team"},
+{word:"attend",part:"verb",def:"to be present",ex:"Attend meeting"},
+{word:"avoid",part:"verb",def:"to prevent",ex:"Avoid mistakes"},
+{word:"base",part:"noun",def:"foundation",ex:"Base decision"},
+{word:"begin",part:"verb",def:"to start",ex:"Begin work"},
+{word:"believe",part:"verb",def:"to think true",ex:"Believe results"},
+{word:"benefit",part:"noun",def:"advantage",ex:"Health benefit"},
+{word:"bill",part:"noun",def:"payment request",ex:"Pay bill"},
+
+{word:"book",part:"verb",def:"to reserve",ex:"Book ticket"},
+{word:"borrow",part:"verb",def:"to take temporarily",ex:"Borrow money"},
+{word:"break",part:"verb",def:"to damage",ex:"Break equipment"},
+{word:"build",part:"verb",def:"to construct",ex:"Build system"},
+{word:"buy",part:"verb",def:"to purchase",ex:"Buy goods"},
+{word:"call",part:"verb",def:"to contact",ex:"Call client"},
+{word:"carry",part:"verb",def:"to hold",ex:"Carry items"},
+{word:"change",part:"verb",def:"to modify",ex:"Change plan"},
+{word:"check",part:"verb",def:"to verify",ex:"Check data"},
+{word:"choose",part:"verb",def:"to select",ex:"Choose option"},
+
+{word:"clean",part:"verb",def:"to remove dirt",ex:"Clean workspace"},
+{word:"close",part:"verb",def:"to shut",ex:"Close deal"},
+{word:"collect",part:"verb",def:"to gather",ex:"Collect information"},
+{word:"compare",part:"verb",def:"to examine differences",ex:"Compare results"},
+{word:"complete",part:"verb",def:"to finish",ex:"Complete task"},
+{word:"confirm",part:"verb",def:"to verify",ex:"Confirm order"},
+{word:"connect",part:"verb",def:"to link",ex:"Connect systems"},
+{word:"consider",part:"verb",def:"to think about",ex:"Consider proposal"},
+{word:"contact",part:"verb",def:"to communicate",ex:"Contact supplier"},
+{word:"continue",part:"verb",def:"to keep going",ex:"Continue work"},
+
+{word:"control",part:"verb",def:"to manage",ex:"Control process"},
+{word:"cost",part:"noun",def:"price",ex:"Reduce cost"},
+{word:"create",part:"verb",def:"to make",ex:"Create plan"},
+{word:"cut",part:"verb",def:"to reduce",ex:"Cut expenses"},
+{word:"decide",part:"verb",def:"to choose",ex:"Decide quickly"},
+{word:"deliver",part:"verb",def:"to send",ex:"Deliver goods"},
+{word:"develop",part:"verb",def:"to improve",ex:"Develop skills"},
+{word:"discuss",part:"verb",def:"to talk about",ex:"Discuss issue"},
+{word:"drive",part:"verb",def:"to operate vehicle",ex:"Drive to office"},
+{word:"earn",part:"verb",def:"to receive money",ex:"Earn income"},
+
+{word:"eat",part:"verb",def:"to consume food",ex:"Eat lunch"},
+{word:"employ",part:"verb",def:"to hire",ex:"Employ staff"},
+{word:"end",part:"verb",def:"to finish",ex:"End meeting"},
+{word:"enter",part:"verb",def:"to go into",ex:"Enter data"},
+{word:"explain",part:"verb",def:"to clarify",ex:"Explain process"},
+{word:"fail",part:"verb",def:"to not succeed",ex:"Fail test"},
+{word:"fill",part:"verb",def:"to complete",ex:"Fill form"},
+{word:"find",part:"verb",def:"to discover",ex:"Find solution"},
+{word:"finish",part:"verb",def:"to complete",ex:"Finish report"},
+{word:"fix",part:"verb",def:"to repair",ex:"Fix issue"},
+
+{word:"follow",part:"verb",def:"to obey",ex:"Follow rules"},
+{word:"forget",part:"verb",def:"to not remember",ex:"Forget details"},
+{word:"get",part:"verb",def:"to receive",ex:"Get results"},
+{word:"give",part:"verb",def:"to provide",ex:"Give feedback"},
+{word:"go",part:"verb",def:"to move",ex:"Go to office"},
+{word:"grow",part:"verb",def:"to increase",ex:"Grow business"},
+{word:"handle",part:"verb",def:"to manage",ex:"Handle tasks"},
+{word:"help",part:"verb",def:"to assist",ex:"Help team"},
+{word:"hire",part:"verb",def:"to employ",ex:"Hire workers"},
+{word:"hold",part:"verb",def:"to keep",ex:"Hold meeting"},
+
+{word:"improve",part:"verb",def:"to get better",ex:"Improve quality"},
+{word:"include",part:"verb",def:"to contain",ex:"Include details"},
+{word:"increase",part:"verb",def:"to raise",ex:"Increase sales"},
+{word:"inform",part:"verb",def:"to tell",ex:"Inform client"},
+{word:"join",part:"verb",def:"to connect",ex:"Join team"},
+{word:"keep",part:"verb",def:"to continue having",ex:"Keep records"},
+{word:"know",part:"verb",def:"to understand",ex:"Know policy"},
+{word:"learn",part:"verb",def:"to study",ex:"Learn skills"},
+{word:"leave",part:"verb",def:"to go away",ex:"Leave office"},
+{word:"lend",part:"verb",def:"to give temporarily",ex:"Lend money"},
+
+{word:"let",part:"verb",def:"to allow",ex:"Let me know"},
+{word:"listen",part:"verb",def:"to hear",ex:"Listen carefully"},
+{word:"look",part:"verb",def:"to see",ex:"Look at data"},
+{word:"lose",part:"verb",def:"to fail to keep",ex:"Lose opportunity"},
+{word:"make",part:"verb",def:"to create",ex:"Make decision"},
+{word:"manage",part:"verb",def:"to control",ex:"Manage project"},
+{word:"meet",part:"verb",def:"to gather",ex:"Meet clients"},
+{word:"move",part:"verb",def:"to change position",ex:"Move office"},
+{word:"need",part:"verb",def:"to require",ex:"Need support"},
+{word:"offer",part:"verb",def:"to provide",ex:"Offer service"},
+
+{word:"open",part:"verb",def:"to start",ex:"Open account"},
+{word:"order",part:"verb",def:"to request",ex:"Order products"},
+{word:"organize",part:"verb",def:"to arrange",ex:"Organize files"},
+{word:"pay",part:"verb",def:"to give money",ex:"Pay invoice"},
+{word:"plan",part:"verb",def:"to prepare",ex:"Plan project"},
+{word:"prepare",part:"verb",def:"to get ready",ex:"Prepare report"},
+{word:"present",part:"verb",def:"to show",ex:"Present results"},
+{word:"produce",part:"verb",def:"to create",ex:"Produce goods"},
+{word:"provide",part:"verb",def:"to supply",ex:"Provide support"},
+{word:"receive",part:"verb",def:"to get",ex:"Receive email"},
+
+{word:"reduce",part:"verb",def:"to lower",ex:"Reduce cost"},
+{word:"report",part:"verb",def:"to inform",ex:"Report issue"},
+{word:"require",part:"verb",def:"to need",ex:"Require approval"},
+{word:"respond",part:"verb",def:"to reply",ex:"Respond quickly"},
+{word:"return",part:"verb",def:"to go back",ex:"Return item"},
+{word:"run",part:"verb",def:"to operate",ex:"Run system"},
+{word:"save",part:"verb",def:"to keep money",ex:"Save cost"},
+{word:"sell",part:"verb",def:"to trade",ex:"Sell products"},
+{word:"send",part:"verb",def:"to deliver",ex:"Send email"},
+{word:"serve",part:"verb",def:"to provide service",ex:"Serve customers"},
+
+{word:"set",part:"verb",def:"to arrange",ex:"Set schedule"},
+{word:"share",part:"verb",def:"to give part",ex:"Share information"},
+{word:"show",part:"verb",def:"to display",ex:"Show results"},
+{word:"sign",part:"verb",def:"to write name",ex:"Sign contract"},
+{word:"solve",part:"verb",def:"to fix problem",ex:"Solve issue"},
+{word:"spend",part:"verb",def:"to use money",ex:"Spend budget"},
+{word:"start",part:"verb",def:"to begin",ex:"Start task"},
+{word:"stay",part:"verb",def:"to remain",ex:"Stay focused"},
+{word:"stop",part:"verb",def:"to end",ex:"Stop process"},
+{word:"study",part:"verb",def:"to learn",ex:"Study market"},
+
+{word:"take",part:"verb",def:"to get",ex:"Take action"},
+{word:"talk",part:"verb",def:"to speak",ex:"Talk to manager"},
+{word:"tell",part:"verb",def:"to inform",ex:"Tell client"},
+{word:"think",part:"verb",def:"to consider",ex:"Think carefully"},
+{word:"try",part:"verb",def:"to attempt",ex:"Try solution"},
+{word:"understand",part:"verb",def:"to know meaning",ex:"Understand problem"},
+{word:"use",part:"verb",def:"to utilize",ex:"Use system"},
+{word:"visit",part:"verb",def:"to go see",ex:"Visit office"},
+{word:"wait",part:"verb",def:"to stay until",ex:"Wait response"},
+{word:"work",part:"verb",def:"to perform job",ex:"Work hard"},
+{word:"write",part:"verb",def:"to record",ex:"Write report"},
+
+{word:"acceptance",part:"noun",def:"agreement or approval",ex:"Offer acceptance confirmed"},
+{word:"access",part:"noun",def:"right to use",ex:"Access granted to system"},
+{word:"accomplish",part:"verb",def:"to achieve",ex:"Accomplish objectives"},
+{word:"account",part:"noun",def:"record of finances",ex:"Manage account"},
+{word:"accurate",part:"adj",def:"correct",ex:"Accurate report required"},
+{word:"achieve",part:"verb",def:"to reach goal",ex:"Achieve targets"},
+{word:"acknowledge",part:"verb",def:"to recognize",ex:"Acknowledge receipt"},
+{word:"acquire",part:"verb",def:"to obtain",ex:"Acquire new clients"},
+{word:"adapt",part:"verb",def:"to adjust",ex:"Adapt strategy"},
+{word:"additional",part:"adj",def:"extra",ex:"Additional cost required"},
+
+{word:"address",part:"verb",def:"to deal with",ex:"Address issues quickly"},
+{word:"adequate",part:"adj",def:"enough",ex:"Adequate supply"},
+{word:"adjustment",part:"noun",def:"small change",ex:"Price adjustment made"},
+{word:"advance",part:"verb",def:"to move forward",ex:"Advance career"},
+{word:"advantage",part:"noun",def:"benefit",ex:"Competitive advantage"},
+{word:"advertisement",part:"noun",def:"promotion",ex:"Online advertisement"},
+{word:"affect",part:"verb",def:"to influence",ex:"Weather affects sales"},
+{word:"affordable",part:"adj",def:"not expensive",ex:"Affordable solution"},
+{word:"agreement",part:"noun",def:"contract",ex:"Sign agreement"},
+{word:"allocate",part:"verb",def:"to distribute",ex:"Allocate resources"},
+
+{word:"alternative",part:"noun",def:"another option",ex:"Consider alternatives"},
+{word:"analysis",part:"noun",def:"study of data",ex:"Market analysis"},
+{word:"annual",part:"adj",def:"yearly",ex:"Annual meeting"},
+{word:"anticipate",part:"verb",def:"to expect",ex:"Anticipate growth"},
+{word:"application",part:"noun",def:"request form",ex:"Submit application"},
+{word:"appointment",part:"noun",def:"scheduled meeting",ex:"Doctor appointment"},
+{word:"approve",part:"verb",def:"to accept",ex:"Approve proposal"},
+{word:"arrangement",part:"noun",def:"organization",ex:"Travel arrangement"},
+{word:"assign",part:"verb",def:"to give task",ex:"Assign duties"},
+{word:"assist",part:"verb",def:"to help",ex:"Assist customers"},
+
+{word:"assume",part:"verb",def:"to suppose",ex:"Assume responsibility"},
+{word:"attach",part:"verb",def:"to join",ex:"Attach file"},
+{word:"attempt",part:"noun",def:"try",ex:"Make an attempt"},
+{word:"attend",part:"verb",def:"to be present",ex:"Attend seminar"},
+{word:"attract",part:"verb",def:"to draw attention",ex:"Attract clients"},
+{word:"available",part:"adj",def:"ready to use",ex:"Product available"},
+{word:"avoid",part:"verb",def:"to prevent",ex:"Avoid delays"},
+{word:"balance",part:"noun",def:"remaining amount",ex:"Check balance"},
+{word:"benefit",part:"noun",def:"advantage",ex:"Employee benefits"},
+{word:"budget",part:"noun",def:"financial plan",ex:"Manage budget"},
+
+{word:"calculate",part:"verb",def:"to compute",ex:"Calculate cost"},
+{word:"cancel",part:"verb",def:"to stop",ex:"Cancel order"},
+{word:"capacity",part:"noun",def:"maximum ability",ex:"Increase capacity"},
+{word:"career",part:"noun",def:"job path",ex:"Career growth"},
+{word:"category",part:"noun",def:"group",ex:"Product category"},
+{word:"change",part:"verb",def:"to modify",ex:"Change schedule"},
+{word:"charge",part:"noun",def:"cost",ex:"Service charge"},
+{word:"check",part:"verb",def:"to verify",ex:"Check details"},
+{word:"client",part:"noun",def:"customer",ex:"Meet client"},
+{word:"collect",part:"verb",def:"to gather",ex:"Collect data"},
+
+{word:"combine",part:"verb",def:"to join",ex:"Combine results"},
+{word:"comment",part:"noun",def:"remark",ex:"Leave comment"},
+{word:"compare",part:"verb",def:"to examine",ex:"Compare prices"},
+{word:"complete",part:"verb",def:"to finish",ex:"Complete task"},
+{word:"confirm",part:"verb",def:"to verify",ex:"Confirm booking"},
+{word:"connect",part:"verb",def:"to link",ex:"Connect systems"},
+{word:"consider",part:"verb",def:"to think about",ex:"Consider options"},
+{word:"contact",part:"verb",def:"to communicate",ex:"Contact supplier"},
+{word:"continue",part:"verb",def:"to proceed",ex:"Continue work"},
+{word:"control",part:"verb",def:"to manage",ex:"Control quality"},
+
+{word:"cost",part:"noun",def:"price",ex:"Reduce cost"},
+{word:"create",part:"verb",def:"to make",ex:"Create report"},
+{word:"customer",part:"noun",def:"buyer",ex:"Customer feedback"},
+{word:"deliver",part:"verb",def:"to send",ex:"Deliver goods"},
+{word:"demand",part:"noun",def:"need",ex:"High demand"},
+{word:"department",part:"noun",def:"division",ex:"HR department"},
+{word:"design",part:"verb",def:"to plan",ex:"Design product"},
+{word:"develop",part:"verb",def:"to improve",ex:"Develop skills"},
+{word:"discount",part:"noun",def:"price reduction",ex:"Offer discount"},
+{word:"discuss",part:"verb",def:"to talk about",ex:"Discuss plan"},
+
+{word:"display",part:"verb",def:"to show",ex:"Display results"},
+{word:"distribute",part:"verb",def:"to deliver",ex:"Distribute products"},
+{word:"document",part:"noun",def:"written file",ex:"Submit document"},
+{word:"efficient",part:"adj",def:"productive",ex:"Efficient system"},
+{word:"employee",part:"noun",def:"worker",ex:"Employee training"},
+{word:"employer",part:"noun",def:"company",ex:"Employer policy"},
+{word:"encourage",part:"verb",def:"to support",ex:"Encourage staff"},
+{word:"equipment",part:"noun",def:"tools",ex:"Office equipment"},
+{word:"estimate",part:"verb",def:"to guess",ex:"Estimate cost"},
+{word:"evaluate",part:"verb",def:"to assess",ex:"Evaluate performance"},
+
+{word:"exchange",part:"verb",def:"to trade",ex:"Exchange information"},
+{word:"expand",part:"verb",def:"to grow",ex:"Expand business"},
+{word:"expect",part:"verb",def:"to anticipate",ex:"Expect results"},
+{word:"experience",part:"noun",def:"knowledge",ex:"Work experience"},
+{word:"explain",part:"verb",def:"to clarify",ex:"Explain process"},
+{word:"export",part:"verb",def:"to send abroad",ex:"Export goods"},
+{word:"extend",part:"verb",def:"to lengthen",ex:"Extend deadline"},
+{word:"facility",part:"noun",def:"building",ex:"Manufacturing facility"},
+{word:"feature",part:"noun",def:"characteristic",ex:"New feature"},
+{word:"feedback",part:"noun",def:"response",ex:"Customer feedback"},
+
+{word:"finance",part:"noun",def:"money management",ex:"Finance team"},
+{word:"follow",part:"verb",def:"to obey",ex:"Follow rules"},
+{word:"forecast",part:"verb",def:"to predict",ex:"Forecast demand"},
+{word:"form",part:"noun",def:"document",ex:"Fill out form"},
+{word:"function",part:"noun",def:"purpose",ex:"Main function"},
+{word:"goal",part:"noun",def:"target",ex:"Reach goal"},
+{word:"handle",part:"verb",def:"to manage",ex:"Handle complaints"},
+{word:"hire",part:"verb",def:"to employ",ex:"Hire staff"},
+{word:"improve",part:"verb",def:"to enhance",ex:"Improve quality"},
+{word:"increase",part:"verb",def:"to raise",ex:"Increase sales"},
+
+{word:"inform",part:"verb",def:"to tell",ex:"Inform customers"},
+{word:"install",part:"verb",def:"to set up",ex:"Install software"},
+{word:"insurance",part:"noun",def:"protection",ex:"Health insurance"},
+{word:"invoice",part:"noun",def:"bill",ex:"Send invoice"},
+{word:"issue",part:"noun",def:"problem",ex:"Solve issue"},
+{word:"item",part:"noun",def:"object",ex:"Order item"},
+{word:"job",part:"noun",def:"work",ex:"Job position"},
+{word:"launch",part:"verb",def:"to introduce",ex:"Launch product"},
+{word:"lead",part:"verb",def:"to guide",ex:"Lead team"},
+{word:"manage",part:"verb",def:"to control",ex:"Manage project"},
+
+{word:"market",part:"noun",def:"place to sell",ex:"Global market"},
+{word:"measure",part:"verb",def:"to assess",ex:"Measure results"},
+{word:"meeting",part:"noun",def:"gathering",ex:"Team meeting"},
+{word:"monitor",part:"verb",def:"to observe",ex:"Monitor progress"},
+{word:"negotiate",part:"verb",def:"to discuss terms",ex:"Negotiate price"},
+{word:"offer",part:"verb",def:"to provide",ex:"Offer service"},
+{word:"order",part:"noun",def:"request",ex:"Place order"},
+{word:"organize",part:"verb",def:"to arrange",ex:"Organize files"},
+{word:"output",part:"noun",def:"production",ex:"Increase output"},
+{word:"payment",part:"noun",def:"money given",ex:"Make payment"},
+
+{word:"plan",part:"noun",def:"strategy",ex:"Business plan"},
+{word:"policy",part:"noun",def:"rule",ex:"Company policy"},
+{word:"position",part:"noun",def:"job role",ex:"Apply position"},
+{word:"prepare",part:"verb",def:"to get ready",ex:"Prepare report"},
+{word:"present",part:"verb",def:"to show",ex:"Present findings"},
+{word:"price",part:"noun",def:"cost",ex:"Lower price"},
+{word:"process",part:"noun",def:"steps",ex:"Production process"},
+{word:"product",part:"noun",def:"item",ex:"New product"},
+{word:"project",part:"noun",def:"planned work",ex:"Complete project"},
+{word:"provide",part:"verb",def:"to supply",ex:"Provide service"},
+
+{word:"purchase",part:"verb",def:"to buy",ex:"Purchase goods"},
+{word:"quality",part:"noun",def:"standard",ex:"High quality"},
+{word:"receive",part:"verb",def:"to get",ex:"Receive order"},
+{word:"reduce",part:"verb",def:"to lower",ex:"Reduce cost"},
+{word:"report",part:"noun",def:"document",ex:"Monthly report"},
+{word:"request",part:"noun",def:"ask",ex:"Customer request"},
+{word:"require",part:"verb",def:"to need",ex:"Require approval"},
+{word:"respond",part:"verb",def:"to reply",ex:"Respond quickly"},
+{word:"result",part:"noun",def:"outcome",ex:"Positive result"},
+{word:"review",part:"verb",def:"to check",ex:"Review performance"},
+
+{word:"schedule",part:"noun",def:"plan of time",ex:"Meeting schedule"},
+{word:"select",part:"verb",def:"to choose",ex:"Select option"},
+{word:"sell",part:"verb",def:"to trade",ex:"Sell products"},
+{word:"service",part:"noun",def:"help provided",ex:"Customer service"},
+{word:"ship",part:"verb",def:"to send goods",ex:"Ship order"},
+{word:"solution",part:"noun",def:"answer",ex:"Find solution"},
+{word:"staff",part:"noun",def:"employees",ex:"Train staff"},
+{word:"start",part:"verb",def:"to begin",ex:"Start project"},
+{word:"store",part:"noun",def:"shop",ex:"Retail store"},
+{word:"strategy",part:"noun",def:"plan",ex:"Marketing strategy"},
+
+// ===== TOEIC C1-C2 VOCAB (225 WORDS) =====
+
+{ word:"abide", part:"verb", def:"to follow or comply with", ex:'"Employees must abide by company policies."' },
+{ word:"abolish", part:"verb", def:"to officially end", ex:'"The company abolished outdated procedures."' },
+{ word:"accelerate", part:"verb", def:"to speed up", ex:'"We need to accelerate production."' },
+{ word:"acclaim", part:"verb", def:"to praise publicly", ex:'"The product was widely acclaimed."' },
+{ word:"accrue", part:"verb", def:"to accumulate over time", ex:'"Interest will accrue monthly."' },
+{ word:"adverse", part:"adjective", def:"unfavorable", ex:'"Adverse conditions affected sales."' },
+{ word:"advocate", part:"verb", def:"to support publicly", ex:'"She advocates sustainable practices."' },
+{ word:"aggregate", part:"verb", def:"to combine into a whole", ex:'"Data was aggregated for analysis."' },
+{ word:"alleviate", part:"verb", def:"to reduce or relieve", ex:'"Measures alleviated delays."' },
+{ word:"allocate", part:"verb", def:"to distribute resources", ex:'"Funds were allocated carefully."' },
+
+{ word:"ambiguous", part:"adjective", def:"unclear or vague", ex:'"The contract terms were ambiguous."' },
+{ word:"amend", part:"verb", def:"to change formally", ex:'"They amended the agreement."' },
+{ word:"amplify", part:"verb", def:"to increase or strengthen", ex:'"Marketing amplified demand."' },
+{ word:"anticipate", part:"verb", def:"to expect", ex:'"We anticipate growth."' },
+{ word:"apparent", part:"adjective", def:"clearly visible", ex:'"The issue became apparent."' },
+{ word:"apprehend", part:"verb", def:"to understand or arrest", ex:'"Police apprehended the suspect."' },
+{ word:"arbitrary", part:"adjective", def:"random or based on personal choice", ex:'"Decisions seemed arbitrary."' },
+{ word:"articulate", part:"verb", def:"to express clearly", ex:'"She articulated the strategy well."' },
+{ word:"ascertain", part:"verb", def:"to find out", ex:'"We must ascertain the cause."' },
+{ word:"assert", part:"verb", def:"to state confidently", ex:'"He asserted his opinion."' },
+
+{ word:"assess", part:"verb", def:"to evaluate", ex:'"Assess the risk carefully."' },
+{ word:"attribute", part:"verb", def:"to assign cause", ex:'"Success was attributed to teamwork."' },
+{ word:"authorize", part:"verb", def:"to give permission", ex:'"Only managers authorize expenses."' },
+{ word:"automate", part:"verb", def:"to make automatic", ex:'"They automated the process."' },
+{ word:"benchmark", part:"noun", def:"standard for comparison", ex:'"Use this as a benchmark."' },
+
+{ word:"bolster", part:"verb", def:"to strengthen", ex:'"The campaign bolstered sales."' },
+{ word:"brevity", part:"noun", def:"shortness", ex:'"Brevity is valued in reports."' },
+{ word:"capitalize", part:"verb", def:"to take advantage", ex:'"Capitalize on opportunities."' },
+{ word:"coherent", part:"adjective", def:"logical and clear", ex:'"The plan is coherent."' },
+{ word:"collaborate", part:"verb", def:"to work together", ex:'"Teams collaborate closely."' },
+
+{ word:"commence", part:"verb", def:"to begin", ex:'"The meeting commenced at noon."' },
+{ word:"compensate", part:"verb", def:"to make up for", ex:'"They compensated losses."' },
+{ word:"compile", part:"verb", def:"to collect information", ex:'"Compile the data."' },
+{ word:"complement", part:"verb", def:"to enhance", ex:'"This feature complements the system."' },
+{ word:"comply", part:"verb", def:"to follow rules", ex:'"Comply with regulations."' },
+
+{ word:"comprehensive", part:"adjective", def:"complete", ex:'"A comprehensive report."' },
+{ word:"concede", part:"verb", def:"to admit reluctantly", ex:'"He conceded the point."' },
+{ word:"concurrent", part:"adjective", def:"happening at same time", ex:'"Concurrent projects underway."' },
+{ word:"condense", part:"verb", def:"to make shorter", ex:'"Condense the report."' },
+{ word:"confidential", part:"adjective", def:"private", ex:'"Confidential documents."' },
+
+{ word:"conform", part:"verb", def:"to follow standards", ex:'"Conform to guidelines."' },
+{ word:"consolidate", part:"verb", def:"to combine", ex:'"Consolidate departments."' },
+{ word:"constitute", part:"verb", def:"to form", ex:'"These factors constitute risk."' },
+{ word:"constraint", part:"noun", def:"limitation", ex:'"Budget constraints exist."' },
+{ word:"consult", part:"verb", def:"to seek advice", ex:'"Consult an expert."' },
+
+{ word:"contemplate", part:"verb", def:"to consider", ex:'"Contemplate expansion."' },
+{ word:"contingency", part:"noun", def:"possible future event", ex:'"Have a contingency plan."' },
+{ word:"contradict", part:"verb", def:"to oppose", ex:'"Data contradicts claims."' },
+{ word:"convey", part:"verb", def:"to communicate", ex:'"Convey the message clearly."' },
+{ word:"correlate", part:"verb", def:"to relate", ex:'"Sales correlate with ads."' },
+
+{ word:"credible", part:"adjective", def:"believable", ex:'"A credible source."' },
+{ word:"crucial", part:"adjective", def:"very important", ex:'"Timing is crucial."' },
+{ word:"cumulative", part:"adjective", def:"increasing over time", ex:'"Cumulative effect observed."' },
+
+{ word:"deduce", part:"verb", def:"to conclude", ex:'"We deduced the cause."' },
+{ word:"defer", part:"verb", def:"to delay", ex:'"Defer the decision."' },
+{ word:"delineate", part:"verb", def:"to describe precisely", ex:'"Delineate responsibilities."' },
+{ word:"denote", part:"verb", def:"to indicate", ex:'"Symbols denote meaning."' },
+{ word:"derive", part:"verb", def:"to obtain from", ex:'"Revenue derived from sales."' },
+
+{ word:"diminish", part:"verb", def:"to reduce", ex:'"Profits diminished."' },
+{ word:"disclose", part:"verb", def:"to reveal", ex:'"Disclose information."' },
+{ word:"discrepancy", part:"noun", def:"difference", ex:'"A discrepancy found."' },
+{ word:"disseminate", part:"verb", def:"to spread", ex:'"Disseminate information."' },
+{ word:"diverge", part:"verb", def:"to separate", ex:'"Opinions diverge."' },
+
+{ word:"eliminate", part:"verb", def:"to remove", ex:'"Eliminate errors."' },
+{ word:"emerge", part:"verb", def:"to appear", ex:'"New trends emerge."' },
+{ word:"empirical", part:"adjective", def:"based on observation", ex:'"Empirical evidence."' },
+{ word:"encompass", part:"verb", def:"to include", ex:'"The role encompasses many tasks."' },
+
+{ word:"enhance", part:"verb", def:"to improve", ex:'"Enhance performance."' },
+{ word:"entail", part:"verb", def:"to involve", ex:'"This entails risk."' },
+{ word:"equivalent", part:"adjective", def:"equal", ex:'"Equivalent value."' },
+{ word:"eradicate", part:"verb", def:"to remove completely", ex:'"Eradicate defects."' },
+
+{ word:"evaluate", part:"verb", def:"to assess", ex:'"Evaluate results."' },
+{ word:"exceed", part:"verb", def:"to go beyond", ex:'"Sales exceeded expectations."' },
+{ word:"facilitate", part:"verb", def:"to make easier", ex:'"Facilitate communication."' },
+
+{ word:"feasible", part:"adjective", def:"possible", ex:'"A feasible plan."' },
+{ word:"fluctuate", part:"verb", def:"to vary", ex:'"Prices fluctuate."' },
+{ word:"formulate", part:"verb", def:"to create", ex:'"Formulate strategy."' },
+
+{ word:"generate", part:"verb", def:"to produce", ex:'"Generate revenue."' },
+{ word:"implement", part:"verb", def:"to carry out", ex:'"Implement policy."' },
+{ word:"incentivize", part:"verb", def:"to motivate", ex:'"Incentivize employees."' },
+
+{ word:"incur", part:"verb", def:"to suffer or acquire", ex:'"Incur costs."' },
+{ word:"induce", part:"verb", def:"to cause", ex:'"Induce change."' },
+{ word:"inevitable", part:"adjective", def:"unavoidable", ex:'"Delay is inevitable."' },
+
+{ word:"integrate", part:"verb", def:"to combine", ex:'"Integrate systems."' },
+{ word:"interpret", part:"verb", def:"to explain meaning", ex:'"Interpret data."' },
+{ word:"justify", part:"verb", def:"to give reason", ex:'"Justify expenses."' },
+
+{ word:"legitimate", part:"adjective", def:"lawful", ex:'"Legitimate claim."' },
+{ word:"maintain", part:"verb", def:"to keep", ex:'"Maintain standards."' },
+
+{ word:"mitigate", part:"verb", def:"to reduce impact", ex:'"Mitigate risk."' },
+{ word:"optimize", part:"verb", def:"to make best", ex:'"Optimize process."' },
+
+{ word:"perceive", part:"verb", def:"to notice", ex:'"Perceive changes."' },
+{ word:"prioritize", part:"verb", def:"to rank importance", ex:'"Prioritize tasks."' },
+
+{ word:"prohibit", part:"verb", def:"to forbid", ex:'"Smoking prohibited."' },
+{ word:"project", part:"verb", def:"to forecast", ex:'"Project revenue."' },
+
+{ word:"reinforce", part:"verb", def:"to strengthen", ex:'"Reinforce policy."' },
+{ word:"resolve", part:"verb", def:"to solve", ex:'"Resolve issue."' },
+
+{ word:"retain", part:"verb", def:"to keep", ex:'"Retain customers."' },
+{ word:"substantiate", part:"verb", def:"to support with evidence", ex:'"Substantiate claims."' },
+
+{ word:"sustain", part:"verb", def:"to maintain", ex:'"Sustain growth."' },
+{ word:"validate", part:"verb", def:"to confirm", ex:'"Validate results."' },
+
+{ word:"viable", part:"adjective", def:"workable", ex:'"A viable solution."' },
+{ word:"withstand", part:"verb", def:"to endure", ex:'"Withstand pressure."' },
+
+{word:"abrupt",part:"adj",def:"sudden and unexpected",ex:"An abrupt change in policy"},
+{word:"abstain",part:"verb",def:"to choose not to participate",ex:"He abstained from voting"},
+{word:"accentuate",part:"verb",def:"to emphasize",ex:"The design accentuates key features"},
+{word:"accessible",part:"adj",def:"easy to reach or use",ex:"Data is accessible online"},
+{word:"accommodate",part:"verb",def:"to provide space or adapt",ex:"The system accommodates growth"},
+{word:"accountable",part:"adj",def:"responsible",ex:"Managers are accountable for results"},
+{word:"accurately",part:"adv",def:"correctly",ex:"Report data accurately"},
+{word:"acknowledge",part:"verb",def:"to recognize",ex:"He acknowledged the issue"},
+{word:"adaptable",part:"adj",def:"able to adjust",ex:"An adaptable strategy"},
+{word:"adjacent",part:"adj",def:"next to",ex:"Adjacent offices merged"},
+
+{word:"administer",part:"verb",def:"to manage",ex:"Administer the program"},
+{word:"advancement",part:"noun",def:"progress",ex:"Career advancement"},
+{word:"affiliation",part:"noun",def:"association",ex:"Company affiliation disclosed"},
+{word:"aggregate",part:"noun",def:"total amount",ex:"Aggregate sales increased"},
+{word:"alignment",part:"noun",def:"arrangement in agreement",ex:"Strategic alignment needed"},
+{word:"allocate",part:"verb",def:"to distribute",ex:"Allocate funds efficiently"},
+{word:"alternative",part:"noun",def:"another option",ex:"Consider alternatives"},
+{word:"analytical",part:"adj",def:"related to analysis",ex:"Analytical skills required"},
+{word:"anticipation",part:"noun",def:"expectation",ex:"In anticipation of demand"},
+{word:"appliance",part:"noun",def:"device",ex:"Office appliances upgraded"},
+
+{word:"applicable",part:"adj",def:"relevant",ex:"Applicable regulations"},
+{word:"appoint",part:"verb",def:"to assign a position",ex:"Appoint a new manager"},
+{word:"appraisal",part:"noun",def:"evaluation",ex:"Annual appraisal completed"},
+{word:"arise",part:"verb",def:"to occur",ex:"Issues may arise"},
+{word:"assemble",part:"verb",def:"to gather",ex:"Assemble a team"},
+{word:"assessable",part:"adj",def:"able to be evaluated",ex:"Assessable outcomes"},
+{word:"assignable",part:"adj",def:"transferable",ex:"Assignable contract rights"},
+{word:"assurance",part:"noun",def:"confidence or guarantee",ex:"Quality assurance ensured"},
+{word:"attainment",part:"noun",def:"achievement",ex:"Goal attainment measured"},
+{word:"attentive",part:"adj",def:"paying attention",ex:"Attentive service provided"},
+
+{word:"authorize",part:"verb",def:"to permit",ex:"Authorize transactions"},
+{word:"automated",part:"adj",def:"operated automatically",ex:"Automated system deployed"},
+{word:"availability",part:"noun",def:"state of being available",ex:"Check availability"},
+{word:"backlog",part:"noun",def:"accumulated work",ex:"Reduce backlog quickly"},
+{word:"balanced",part:"adj",def:"evenly distributed",ex:"Balanced budget achieved"},
+{word:"baseline",part:"noun",def:"starting point",ex:"Establish a baseline"},
+{word:"beneficial",part:"adj",def:"helpful",ex:"Beneficial agreement"},
+{word:"bypass",part:"verb",def:"to avoid",ex:"Bypass procedures"},
+{word:"calibration",part:"noun",def:"adjustment for accuracy",ex:"Calibration required"},
+{word:"capability",part:"noun",def:"ability",ex:"System capability expanded"},
+
+{word:"capacity",part:"noun",def:"maximum output",ex:"Increase capacity"},
+{word:"clarify",part:"verb",def:"to make clear",ex:"Clarify instructions"},
+{word:"collateral",part:"noun",def:"security for loan",ex:"Provide collateral"},
+{word:"committed",part:"adj",def:"dedicated",ex:"Committed workforce"},
+{word:"compatible",part:"adj",def:"able to work together",ex:"Compatible systems"},
+{word:"competency",part:"noun",def:"skill",ex:"Core competencies"},
+{word:"compliance",part:"noun",def:"following rules",ex:"Ensure compliance"},
+{word:"composed",part:"adj",def:"calm",ex:"Remain composed"},
+{word:"compromise",part:"noun",def:"agreement",ex:"Reach compromise"},
+{word:"concentrate",part:"verb",def:"to focus",ex:"Concentrate efforts"},
+
+{word:"conclusive",part:"adj",def:"decisive",ex:"Conclusive evidence"},
+{word:"conducive",part:"adj",def:"helpful",ex:"Conducive environment"},
+{word:"confine",part:"verb",def:"to limit",ex:"Confine expenses"},
+{word:"conformity",part:"noun",def:"compliance",ex:"Ensure conformity"},
+{word:"consecutive",part:"adj",def:"following continuously",ex:"Three consecutive years"},
+{word:"considerable",part:"adj",def:"significant",ex:"Considerable growth"},
+{word:"consistent",part:"adj",def:"steady",ex:"Consistent performance"},
+{word:"constitute",part:"verb",def:"to form",ex:"Factors constitute risk"},
+{word:"constraint",part:"noun",def:"limitation",ex:"Budget constraint"},
+{word:"constructive",part:"adj",def:"helpful",ex:"Constructive feedback"},
+
+{word:"consultation",part:"noun",def:"discussion",ex:"Consultation required"},
+{word:"contemporary",part:"adj",def:"modern",ex:"Contemporary design"},
+{word:"contrary",part:"adj",def:"opposite",ex:"Contrary opinion"},
+{word:"contribute",part:"verb",def:"to add",ex:"Contribute ideas"},
+{word:"conversion",part:"noun",def:"change",ex:"Conversion rate improved"},
+{word:"coordinate",part:"verb",def:"to organize",ex:"Coordinate tasks"},
+{word:"correspond",part:"verb",def:"to match",ex:"Data corresponds"},
+{word:"credible",part:"adj",def:"believable",ex:"Credible source"},
+{word:"criteria",part:"noun",def:"standards",ex:"Evaluation criteria"},
+{word:"crucial",part:"adj",def:"important",ex:"Crucial decision"},
+
+{word:"dedicated",part:"adj",def:"devoted",ex:"Dedicated team"},
+{word:"deficiency",part:"noun",def:"lack",ex:"Skill deficiency"},
+{word:"deliberate",part:"verb",def:"to consider",ex:"Deliberate carefully"},
+{word:"demonstrate",part:"verb",def:"to show",ex:"Demonstrate results"},
+{word:"deploy",part:"verb",def:"to use resources",ex:"Deploy staff"},
+{word:"derive",part:"verb",def:"to obtain",ex:"Derive value"},
+{word:"designate",part:"verb",def:"to assign",ex:"Designate roles"},
+{word:"detect",part:"verb",def:"to discover",ex:"Detect errors"},
+{word:"determine",part:"verb",def:"to decide",ex:"Determine cause"},
+{word:"deviation",part:"noun",def:"difference",ex:"Process deviation"},
+
+{word:"diagnose",part:"verb",def:"to identify problem",ex:"Diagnose issue"},
+{word:"differentiate",part:"verb",def:"to distinguish",ex:"Differentiate products"},
+{word:"diligent",part:"adj",def:"hardworking",ex:"Diligent employee"},
+{word:"discretion",part:"noun",def:"freedom to decide",ex:"Use discretion"},
+{word:"distribute",part:"verb",def:"to spread",ex:"Distribute goods"},
+{word:"diversify",part:"verb",def:"to vary",ex:"Diversify portfolio"},
+{word:"dominate",part:"verb",def:"to control",ex:"Dominate market"},
+{word:"durable",part:"adj",def:"long-lasting",ex:"Durable product"},
+
+{word:"efficient",part:"adj",def:"productive",ex:"Efficient process"},
+{word:"elaborate",part:"verb",def:"to explain",ex:"Elaborate details"},
+{word:"eliminate",part:"verb",def:"remove",ex:"Eliminate waste"},
+{word:"emphasize",part:"verb",def:"stress importance",ex:"Emphasize safety"},
+{word:"enforce",part:"verb",def:"to apply rules",ex:"Enforce policy"},
+{word:"engage",part:"verb",def:"to involve",ex:"Engage employees"},
+{word:"enhancement",part:"noun",def:"improvement",ex:"System enhancement"},
+{word:"ensure",part:"verb",def:"guarantee",ex:"Ensure quality"},
+
+{word:"establish",part:"verb",def:"to set up",ex:"Establish process"},
+{word:"evaluate",part:"verb",def:"to assess",ex:"Evaluate options"},
+{word:"exceed",part:"verb",def:"go beyond",ex:"Exceed expectations"},
+{word:"exclude",part:"verb",def:"to leave out",ex:"Exclude items"},
+{word:"execute",part:"verb",def:"to carry out",ex:"Execute plan"},
+{word:"expand",part:"verb",def:"to grow",ex:"Expand business"},
+{word:"expertise",part:"noun",def:"skill",ex:"Technical expertise"},
+{word:"explicit",part:"adj",def:"clear",ex:"Explicit instructions"},
+
+{word:"facilitate",part:"verb",def:"to help",ex:"Facilitate workflow"},
+{word:"finalize",part:"verb",def:"to complete",ex:"Finalize agreement"},
+{word:"flexible",part:"adj",def:"adaptable",ex:"Flexible policy"},
+{word:"forecast",part:"verb",def:"to predict",ex:"Forecast demand"},
+{word:"formalize",part:"verb",def:"to make official",ex:"Formalize contract"},
+{word:"functionality",part:"noun",def:"features",ex:"System functionality"},
+
+{word:"generate",part:"verb",def:"produce",ex:"Generate revenue"},
+{word:"govern",part:"verb",def:"to control",ex:"Govern operations"},
+{word:"guarantee",part:"verb",def:"promise",ex:"Guarantee results"},
+
+{word:"implement",part:"verb",def:"to apply",ex:"Implement solution"},
+{word:"imply",part:"verb",def:"suggest indirectly",ex:"Data implies growth"},
+{word:"impose",part:"verb",def:"to enforce",ex:"Impose rules"},
+{word:"improve",part:"verb",def:"to enhance",ex:"Improve performance"},
+{word:"incentive",part:"noun",def:"motivation",ex:"Provide incentive"},
+{word:"incorporate",part:"verb",def:"include",ex:"Incorporate feedback"},
+{word:"indicate",part:"verb",def:"show",ex:"Data indicates trend"},
+{word:"influence",part:"verb",def:"affect",ex:"Influence decision"},
+{word:"initiate",part:"verb",def:"to begin",ex:"Initiate process"},
+{word:"innovative",part:"adj",def:"new ideas",ex:"Innovative design"},
+
+// ===== MIXED B2–C1–C2 WORDS (200) =====
+
+{word:"abundant",part:"adj",def:"more than enough",ex:"Abundant resources available"},
+{word:"accelerate",part:"verb",def:"to speed up",ex:"Accelerate production"},
+{word:"accessible",part:"adj",def:"easy to use or reach",ex:"Accessible platform"},
+{word:"accountable",part:"adj",def:"responsible",ex:"Accountable for results"},
+{word:"accumulate",part:"verb",def:"to gather over time",ex:"Accumulate profits"},
+{word:"accurately",part:"adv",def:"correctly",ex:"Report accurately"},
+{word:"acknowledgment",part:"noun",def:"recognition",ex:"Acknowledgment received"},
+{word:"adaptability",part:"noun",def:"ability to adjust",ex:"High adaptability required"},
+{word:"adequately",part:"adv",def:"sufficiently",ex:"Adequately prepared"},
+{word:"adjustment",part:"noun",def:"change",ex:"Price adjustment made"},
+
+{word:"advancement",part:"noun",def:"progress",ex:"Career advancement"},
+{word:"advisory",part:"adj",def:"giving advice",ex:"Advisory board"},
+{word:"allocation",part:"noun",def:"distribution",ex:"Budget allocation"},
+{word:"alternative",part:"adj",def:"another option",ex:"Alternative solution"},
+{word:"ambitious",part:"adj",def:"having big goals",ex:"Ambitious plan"},
+{word:"analytical",part:"adj",def:"related to analysis",ex:"Analytical approach"},
+{word:"anticipation",part:"noun",def:"expectation",ex:"In anticipation"},
+{word:"applicable",part:"adj",def:"relevant",ex:"Applicable law"},
+{word:"appreciate",part:"verb",def:"to value",ex:"Appreciate support"},
+{word:"arbitrary",part:"adj",def:"random",ex:"Arbitrary decision"},
+
+{word:"articulate",part:"verb",def:"to express clearly",ex:"Articulate ideas"},
+{word:"assertive",part:"adj",def:"confident",ex:"Assertive communication"},
+{word:"assurance",part:"noun",def:"confidence",ex:"Quality assurance"},
+{word:"attainment",part:"noun",def:"achievement",ex:"Goal attainment"},
+{word:"authorize",part:"verb",def:"to permit",ex:"Authorize payment"},
+{word:"automate",part:"verb",def:"to make automatic",ex:"Automate system"},
+{word:"availability",part:"noun",def:"being available",ex:"Check availability"},
+{word:"backlog",part:"noun",def:"unfinished work",ex:"Clear backlog"},
+{word:"balanced",part:"adj",def:"even",ex:"Balanced approach"},
+{word:"baseline",part:"noun",def:"starting point",ex:"Establish baseline"},
+
+{word:"benchmark",part:"noun",def:"standard",ex:"Industry benchmark"},
+{word:"beneficial",part:"adj",def:"helpful",ex:"Beneficial outcome"},
+{word:"boost",part:"verb",def:"to increase",ex:"Boost performance"},
+{word:"briefing",part:"noun",def:"short meeting",ex:"Daily briefing"},
+{word:"broadly",part:"adv",def:"generally",ex:"Broadly accepted"},
+{word:"calculation",part:"noun",def:"math process",ex:"Cost calculation"},
+{word:"capability",part:"noun",def:"ability",ex:"System capability"},
+{word:"centralize",part:"verb",def:"to control in one place",ex:"Centralize operations"},
+{word:"clarification",part:"noun",def:"explanation",ex:"Need clarification"},
+{word:"collaboration",part:"noun",def:"working together",ex:"Team collaboration"},
+
+{word:"commence",part:"verb",def:"to begin",ex:"Commence project"},
+{word:"compensation",part:"noun",def:"payment",ex:"Employee compensation"},
+{word:"complementary",part:"adj",def:"enhancing",ex:"Complementary services"},
+{word:"compliance",part:"noun",def:"following rules",ex:"Ensure compliance"},
+{word:"comprehensive",part:"adj",def:"complete",ex:"Comprehensive report"},
+{word:"consecutive",part:"adj",def:"continuous",ex:"Consecutive days"},
+{word:"considerable",part:"adj",def:"large",ex:"Considerable growth"},
+{word:"consistency",part:"noun",def:"stability",ex:"Maintain consistency"},
+{word:"consolidate",part:"verb",def:"to combine",ex:"Consolidate data"},
+{word:"constraint",part:"noun",def:"limit",ex:"Budget constraint"},
+
+{word:"consultation",part:"noun",def:"discussion",ex:"Client consultation"},
+{word:"contemporary",part:"adj",def:"modern",ex:"Contemporary design"},
+{word:"contribution",part:"noun",def:"input",ex:"Team contribution"},
+{word:"conversion",part:"noun",def:"change",ex:"Conversion rate"},
+{word:"coordinate",part:"verb",def:"to organize",ex:"Coordinate teams"},
+{word:"correlation",part:"noun",def:"relationship",ex:"Strong correlation"},
+{word:"credible",part:"adj",def:"believable",ex:"Credible data"},
+{word:"critical",part:"adj",def:"very important",ex:"Critical decision"},
+{word:"cumulative",part:"adj",def:"increasing",ex:"Cumulative growth"},
+{word:"dedicated",part:"adj",def:"committed",ex:"Dedicated staff"},
+
+{word:"deficiency",part:"noun",def:"lack",ex:"Skill deficiency"},
+{word:"deliberate",part:"verb",def:"to consider",ex:"Deliberate options"},
+{word:"demonstration",part:"noun",def:"showing",ex:"Product demonstration"},
+{word:"deploy",part:"verb",def:"to use resources",ex:"Deploy workforce"},
+{word:"derive",part:"verb",def:"to get from",ex:"Derive benefits"},
+{word:"designate",part:"verb",def:"to assign",ex:"Designate roles"},
+{word:"detect",part:"verb",def:"to discover",ex:"Detect problems"},
+{word:"determine",part:"verb",def:"to decide",ex:"Determine outcome"},
+{word:"deviation",part:"noun",def:"difference",ex:"Process deviation"},
+{word:"differentiate",part:"verb",def:"to distinguish",ex:"Differentiate brands"},
+
+{word:"diligent",part:"adj",def:"hardworking",ex:"Diligent worker"},
+{word:"discretion",part:"noun",def:"freedom to decide",ex:"Manager discretion"},
+{word:"distribute",part:"verb",def:"to deliver",ex:"Distribute goods"},
+{word:"diversify",part:"verb",def:"to vary",ex:"Diversify investment"},
+{word:"dominate",part:"verb",def:"to control",ex:"Dominate market"},
+{word:"durable",part:"adj",def:"long-lasting",ex:"Durable product"},
+
+{word:"efficient",part:"adj",def:"productive",ex:"Efficient system"},
+{word:"elaborate",part:"verb",def:"to explain",ex:"Elaborate plan"},
+{word:"eliminate",part:"verb",def:"remove",ex:"Eliminate waste"},
+{word:"emphasize",part:"verb",def:"stress importance",ex:"Emphasize quality"},
+{word:"enforce",part:"verb",def:"apply rules",ex:"Enforce policy"},
+{word:"enhancement",part:"noun",def:"improvement",ex:"System enhancement"},
+{word:"ensure",part:"verb",def:"guarantee",ex:"Ensure success"},
+{word:"establish",part:"verb",def:"set up",ex:"Establish process"},
+{word:"evaluate",part:"verb",def:"assess",ex:"Evaluate results"},
+{word:"exceed",part:"verb",def:"go beyond",ex:"Exceed expectations"},
+
+// ===== CUSTOM WORD SET =====
+
+{word:"affordable",part:"adjective",def:"not expensive",ex:"This hotel is affordable for students."},
+{word:"recur",part:"verb",def:"happen again",ex:"The issue may recur next month."},
+{word:"in charge (of)",part:"phrase",def:"responsible for",ex:"She is in charge of the project."},
+{word:"durable",part:"adjective",def:"long-lasting",ex:"These shoes are very durable."},
+{word:"stay on top of",part:"phrase",def:"keep under control",ex:"He stays on top of his tasks."},
+{word:"expose",part:"verb",def:"reveal or make visible",ex:"The report exposed the problem."},
+{word:"casual",part:"adjective",def:"informal",ex:"The office has a casual dress code."},
+{word:"reinforce",part:"verb",def:"strengthen",ex:"The manager reinforced the rules."},
+{word:"glimpse",part:"noun/verb",def:"quick look",ex:"I caught a glimpse of him."},
+{word:"facilitate",part:"verb",def:"make easier",ex:"This tool facilitates communication."},
+
+{word:"sharp",part:"adjective",def:"quick or precise",ex:"She has a sharp mind."},
+{word:"courier",part:"noun",def:"delivery person",ex:"The courier delivered the package."},
+{word:"revise",part:"verb",def:"review and improve",ex:"Please revise your report."},
+{word:"beforehand",part:"adverb",def:"before something",ex:"Inform me beforehand."},
+{word:"express",part:"verb/adjective",def:"show or fast",ex:"She expressed her opinion."},
+{word:"expression",part:"noun",def:"way of showing",ex:"His expression looked serious."},
+{word:"fold",part:"verb",def:"bend",ex:"Fold the paper in half."},
+{word:"petition",part:"noun/verb",def:"formal request",ex:"They signed a petition."},
+{word:"eager",part:"adjective",def:"very interested",ex:"She is eager to learn."},
+{word:"intensive",part:"adjective",def:"very focused",ex:"He took an intensive course."},
+
+{word:"hospitality",part:"noun",def:"friendly service",ex:"The hotel is known for hospitality."},
+{word:"briefcase",part:"noun",def:"work bag",ex:"He carried a briefcase."},
+{word:"tenant",part:"noun",def:"renter",ex:"The tenant pays monthly rent."},
+{word:"landlord",part:"noun",def:"property owner",ex:"The landlord fixed the issue."},
+{word:"cordiality",part:"noun",def:"politeness",ex:"They greeted us with cordiality."},
+{word:"go over",part:"phrasal verb",def:"review",ex:"Let's go over the plan."},
+{word:"abundant",part:"adjective",def:"plentiful",ex:"Food is abundant here."},
+{word:"come up with",part:"phrase",def:"think of",ex:"She came up with an idea."},
+{word:"commensurate",part:"adjective",def:"equal in value",ex:"Salary is commensurate with experience."},
+{word:"time-consuming",part:"adjective",def:"takes a lot of time",ex:"This task is time-consuming."},
+
+{word:"qualification",part:"noun",def:"required skill",ex:"He has the right qualifications."},
+{word:"call in",part:"phrasal verb",def:"request help",ex:"They called in a specialist."},
+{word:"look up to",part:"phrasal verb",def:"admire",ex:"I look up to my teacher."},
+{word:"keep up with",part:"phrasal verb",def:"stay updated",ex:"Keep up with the news."},
+{word:"on track",part:"phrase",def:"following plan",ex:"The project is on track."},
+{word:"compensate",part:"verb",def:"make up for",ex:"The company compensated workers."},
+{word:"wage",part:"noun",def:"salary",ex:"Workers earn hourly wages."},
+{word:"delicately",part:"adverb",def:"carefully",ex:"Handle it delicately."},
+{word:"eligible",part:"adjective",def:"qualified",ex:"She is eligible for promotion."},
+{word:"dedication",part:"noun",def:"commitment",ex:"His dedication is impressive."},
+
+// ===== CUSTOM WORD SET 2 =====
+
+{word:"contribute",part:"verb",def:"give or add to something",ex:"She contributed ideas to the team."},
+{word:"merit",part:"noun",def:"value or worth",ex:"His proposal has merit."},
+{word:"praise",part:"noun/verb",def:"express approval",ex:"The teacher praised her work."},
+{word:"loyal",part:"adjective",def:"faithful and supportive",ex:"He is loyal to his company."},
+{word:"look for",part:"phrasal verb",def:"try to find",ex:"I am looking for my keys."},
+{word:"escalate",part:"verb",def:"increase quickly",ex:"The issue escalated quickly."},
+{word:"considerable",part:"adjective",def:"large in amount",ex:"They made considerable progress."},
+{word:"contemporary",part:"adjective",def:"modern or current",ex:"This is a contemporary design."},
+{word:"mandate",part:"noun/verb",def:"official order",ex:"The policy was mandated by law."},
+{word:"mandatory",part:"adjective",def:"required",ex:"Attendance is mandatory."},
+
+{word:"allocate",part:"verb",def:"distribute resources",ex:"The budget was allocated wisely."},
+{word:"compatible",part:"adjective",def:"able to work together",ex:"The software is compatible."},
+{word:"customer",part:"noun",def:"buyer of goods",ex:"The customer is satisfied."},
+{word:"client",part:"noun",def:"person receiving service",ex:"The lawyer met her client."},
+{word:"merchant",part:"noun",def:"trader or seller",ex:"The merchant sells textiles."},
+{word:"bear",part:"verb",def:"carry or endure",ex:"He cannot bear the pain."},
+{word:"consistent",part:"adjective",def:"steady and not changing",ex:"She is consistent in her work."},
+{word:"diverse",part:"adjective",def:"varied",ex:"The team is diverse."},
+{word:"diversity",part:"noun",def:"variety",ex:"Diversity improves creativity."},
+{word:"enterprise",part:"noun",def:"business or company",ex:"He started a new enterprise."},
+
+{word:"prerequisite",part:"noun",def:"requirement beforehand",ex:"Experience is a prerequisite."},
+{word:"stationary",part:"adjective",def:"not moving",ex:"The car remained stationary."},
+{word:"integral",part:"adjective",def:"essential",ex:"Trust is integral to teamwork."},
+{word:"carrier",part:"noun",def:"transporter",ex:"The carrier shipped the goods."},
+{word:"sufficient",part:"adjective",def:"enough",ex:"The funds are sufficient."},
+{word:"on hand",part:"phrase",def:"available",ex:"We have extra stock on hand."},
+{word:"invoice",part:"noun",def:"bill",ex:"The invoice was sent yesterday."},
+{word:"pension",part:"noun",def:"retirement payment",ex:"He receives a pension."},
+{word:"correspondence",part:"noun",def:"communication by letters or email",ex:"Business correspondence is important."},
+{word:"compile",part:"verb",def:"collect and organize",ex:"She compiled the data."},
+
+{word:"dispute",part:"noun/verb",def:"disagreement",ex:"They had a dispute over payment."},
+{word:"impose",part:"verb",def:"force something on others",ex:"The rule was imposed strictly."},
+{word:"promptness",part:"noun",def:"being on time",ex:"Promptness is appreciated."},
+{word:"promptly",part:"adverb",def:"quickly or on time",ex:"He replied promptly."},
+{word:"rectify",part:"verb",def:"correct",ex:"Please rectify the error."},
+{word:"terms",part:"noun",def:"conditions",ex:"Read the terms carefully."},
+{word:"tedious",part:"adjective",def:"boring and long",ex:"The task is tedious."},
+{word:"discrepancy",part:"noun",def:"difference",ex:"There is a discrepancy in data."},
+{word:"territory",part:"noun",def:"area or region",ex:"This is protected territory."},
+{word:"enlarge",part:"verb",def:"make bigger",ex:"They enlarged the office."},
+
+// ===== CUSTOM WORD SET 3 =====
+
+{word:"leaflet",part:"noun",def:"small printed paper",ex:"They handed out leaflets."},
+{word:"humor",part:"noun",def:"sense of fun",ex:"He has a good sense of humor."},
+{word:"restrict",part:"verb",def:"to limit",ex:"Smoking is restricted here."},
+{word:"dividend",part:"noun",def:"company profit share",ex:"Investors received dividends."},
+{word:"down payment",part:"noun",def:"initial payment",ex:"He made a down payment on a car."},
+{word:"mortgage",part:"noun",def:"home loan",ex:"She applied for a mortgage."},
+{word:"audit",part:"noun/verb",def:"financial check",ex:"The company was audited."},
+{word:"build up",part:"phrasal verb",def:"increase gradually",ex:"Stress can build up over time."},
+{word:"turn over",part:"phrasal verb",def:"generate sales",ex:"The store turns over millions yearly."},
+{word:"outstanding",part:"adjective",def:"excellent or unpaid",ex:"She did outstanding work."},
+
+{word:"reconcile",part:"verb",def:"make consistent",ex:"They reconciled the accounts."},
+{word:"commitment",part:"noun",def:"strong dedication",ex:"He showed commitment to work."},
+{word:"conservative",part:"adjective",def:"cautious",ex:"They chose a conservative approach."},
+{word:"withhold",part:"verb",def:"to hold back",ex:"The company withheld payment."},
+{word:"owe",part:"verb",def:"be in debt",ex:"I owe him money."},
+{word:"yield",part:"noun/verb",def:"produce or output",ex:"The farm yields good crops."},
+{word:"project",part:"noun/verb",def:"planned work",ex:"She leads the project."},
+{word:"adjacent",part:"adjective",def:"next to",ex:"The office is adjacent to mine."},
+{word:"inconsiderate",part:"adjective",def:"not thoughtful",ex:"That was inconsiderate behavior."},
+{word:"opt",part:"verb",def:"to choose",ex:"He opted for a cheaper plan."},
+
+{word:"scrutiny",part:"noun",def:"careful examination",ex:"The plan faced scrutiny."},
+{word:"conducive",part:"adjective",def:"helpful for something",ex:"This place is conducive to study."},
+{word:"hamper",part:"noun/verb",def:"to hinder or basket",ex:"Bad weather hampered travel."},
+{word:"adhere",part:"verb",def:"stick to or follow",ex:"Please adhere to the rules."},
+{word:"adherence",part:"noun",def:"following rules",ex:"Strict adherence is required."},
+{word:"go ahead",part:"phrase",def:"to proceed",ex:"You may go ahead now."},
+{word:"inspect",part:"verb",def:"examine carefully",ex:"The manager inspected the site."},
+{word:"perception",part:"noun",def:"understanding",ex:"Public perception matters."},
+{word:"perceive",part:"verb",def:"to understand",ex:"She perceived a problem early."},
+{word:"repel",part:"verb",def:"to push away",ex:"Magnets repel each other."},
+
+{word:"wrinkle",part:"noun/verb",def:"fold line",ex:"The shirt has wrinkles."},
+{word:"conform",part:"verb",def:"follow rules",ex:"Employees must conform."},
+{word:"garment",part:"noun",def:"clothing",ex:"She bought a garment."},
+{word:"anxiety",part:"noun",def:"worry",ex:"He felt anxiety before the test."},
+{word:"anxious",part:"adjective",def:"worried or eager",ex:"She is anxious about results."},
+{word:"supervisor",part:"noun",def:"manager",ex:"Talk to your supervisor."},
+{word:"ascertain",part:"verb",def:"to find out",ex:"We must ascertain the facts."},
+{word:"apprehensive",part:"adjective",def:"worried",ex:"He felt apprehensive about the job."},
+{word:"fluctuate",part:"verb",def:"change often",ex:"Prices fluctuate daily."},
+{word:"occupy",part:"verb",def:"take space or time",ex:"The job occupies his time."},
+
+// ===== CUSTOM WORD SET 4 =====
+
+{word:"lease",part:"noun/verb",def:"rental agreement",ex:"They signed a lease."},
+{word:"lock into",part:"phrasal verb",def:"commit firmly",ex:"They locked into a long contract."},
+{word:"subject to",part:"phrase",def:"dependent on",ex:"Prices are subject to change."},
+{word:"acquire",part:"verb",def:"to obtain",ex:"The company acquired new assets."},
+{word:"auction",part:"noun/verb",def:"public sale",ex:"The painting was sold at auction."},
+{word:"daringly",part:"adverb",def:"boldly",ex:"He acted daringly."},
+{word:"subjective",part:"adjective",def:"based on opinion",ex:"Taste is subjective."},
+{word:"appetite",part:"noun",def:"desire for something",ex:"He has a strong appetite for success."},
+{word:"mix-up",part:"noun",def:"confusion",ex:"There was a mix-up in orders."},
+{word:"patron",part:"noun",def:"customer or supporter",ex:"The restaurant welcomed patrons."},
+
+{word:"burden",part:"noun/verb",def:"heavy responsibility",ex:"Debt is a burden."},
+{word:"settle on",part:"phrasal verb",def:"decide on",ex:"They settled on a plan."},
+{word:"fall to",part:"phrasal verb",def:"become responsibility",ex:"The task fell to me."},
+{word:"accustom",part:"verb",def:"make familiar",ex:"He became accustomed to noise."},
+{word:"apprentice",part:"noun",def:"trainee",ex:"The apprentice learned quickly."},
+{word:"incorporate",part:"verb",def:"to include",ex:"They incorporated feedback."},
+{word:"culinary",part:"adjective",def:"related to cooking",ex:"She studies culinary arts."},
+{word:"draw",part:"verb",def:"to attract or pull",ex:"The event drew a crowd."},
+{word:"outlet",part:"noun",def:"store or exit",ex:"The brand opened a new outlet."},
+{word:"relinquish",part:"verb",def:"to give up",ex:"He relinquished control."},
+
+{word:"lead time",part:"noun",def:"preparation time before action",ex:"We need more lead time."},
+{word:"proximity",part:"noun",def:"closeness",ex:"The hotel’s proximity is convenient."},
+{word:"regulate",part:"verb",def:"control by rules",ex:"The government regulates prices."},
+{word:"board",part:"noun",def:"group of directors",ex:"The board approved the plan."},
+{word:"embarkation",part:"noun",def:"boarding",ex:"Embarkation starts at noon."},
+{word:"itinerary",part:"noun",def:"travel plan",ex:"Check your itinerary."},
+{word:"prohibit",part:"verb",def:"to forbid",ex:"Smoking is prohibited."},
+{word:"valid",part:"adjective",def:"acceptable or legal",ex:"Your ID is valid."},
+{word:"distinguish",part:"verb",def:"tell apart",ex:"It’s hard to distinguish them."},
+{word:"economize",part:"verb",def:"save money",ex:"We must economize spending."},
+
+{word:"prospective",part:"adjective",def:"potential",ex:"Prospective buyers visited."},
+{word:"substantially",part:"adverb",def:"significantly",ex:"Sales increased substantially."},
+{word:"excursion",part:"noun",def:"short trip",ex:"They went on an excursion."},
+{word:"scenery",part:"noun",def:"natural view",ex:"The scenery is beautiful."},
+{word:"directory",part:"noun",def:"list of contacts",ex:"Check the company directory."},
+{word:"fare",part:"noun",def:"travel cost",ex:"Bus fare increased."},
+{word:"comprehensive",part:"adjective",def:"complete",ex:"The report is comprehensive."},
+{word:"entitle",part:"verb",def:"give the right to",ex:"This ticket entitles you to entry."},
+{word:"relatively",part:"adverb",def:"comparatively",ex:"The test was relatively easy."},
+{word:"preclude",part:"verb",def:"to prevent",ex:"Rules preclude entry."},
+
+// ===== CUSTOM WORD SET 5 =====
+
+{word:"quote",part:"noun/verb",def:"give a price",ex:"They quoted a high price."},
+{word:"intend",part:"verb",def:"to plan to",ex:"I intend to apply."},
+{word:"coincide",part:"verb",def:"happen at the same time",ex:"The events coincide."},
+{word:"tempt",part:"verb",def:"to attract",ex:"Discounts tempt buyers."},
+{word:"reproduce",part:"verb",def:"to copy",ex:"The machine reproduces documents."},
+{word:"settle",part:"verb",def:"resolve or pay",ex:"They settled the dispute."},
+{word:"rival",part:"noun/verb",def:"competitor",ex:"The company has strong rivals."},
+{word:"stare",part:"verb",def:"look fixedly",ex:"He stared at the screen."},
+{word:"gratitude",part:"noun",def:"thankfulness",ex:"She expressed gratitude."},
+{word:"sympathetic",part:"adjective",def:"understanding",ex:"He was sympathetic to her."},
+
+{word:"unfavorable",part:"adjective",def:"negative",ex:"The conditions are unfavorable."},
+{word:"revision",part:"noun",def:"review or change",ex:"The report needs revision."},
+{word:"attainment",part:"noun",def:"achievement",ex:"Graduation is a major attainment."},
+{word:"cupboard",part:"noun",def:"storage cabinet",ex:"The dishes are in the cupboard."},
+{word:"desert",part:"verb/noun",def:"abandon or dry land",ex:"He deserted his post."},
+{word:"successive",part:"adjective",def:"following one after another",ex:"They won successive games."},
+{word:"strip",part:"verb/noun",def:"remove or narrow piece",ex:"He stripped the paint."},
+{word:"pale",part:"adjective",def:"light in color",ex:"She looked pale."},
+{word:"nominate",part:"verb",def:"officially choose",ex:"They nominated a leader."},
+{word:"tendency",part:"noun",def:"usual behavior",ex:"He has a tendency to forget."},
+
+{word:"disperse",part:"verb",def:"to spread out",ex:"The crowd dispersed quickly."},
+{word:"pleasant",part:"adjective",def:"nice",ex:"It was a pleasant day."},
+{word:"subsequent",part:"adjective",def:"following later",ex:"Subsequent events proved him right."},
+{word:"accommodation",part:"noun",def:"lodging",ex:"They booked accommodation."},
+{word:"unwillingly",part:"adverb",def:"reluctantly",ex:"He agreed unwillingly."},
+{word:"rehearse",part:"verb",def:"to practice",ex:"They rehearsed the play."},
+{word:"unforeseen",part:"adjective",def:"unexpected",ex:"Unforeseen issues occurred."},
+{word:"worship",part:"verb/noun",def:"show devotion",ex:"They worship regularly."},
+{word:"amusing",part:"adjective",def:"funny",ex:"The story is amusing."},
+{word:"approach",part:"verb/noun",def:"come near or method",ex:"We need a new approach."},
+
+{word:"marginal",part:"adjective",def:"slight",ex:"There was marginal improvement."},
+{word:"bandage",part:"noun/verb",def:"medical wrap",ex:"She used a bandage."},
+{word:"superior",part:"adjective",def:"better",ex:"This product is superior."},
+{word:"dialogue",part:"noun",def:"conversation",ex:"The dialogue was helpful."},
+{word:"allied",part:"adjective",def:"related or connected",ex:"Allied companies worked together."},
+{word:"broaden",part:"verb",def:"to make wider",ex:"Travel broadens the mind."},
+{word:"confine",part:"verb",def:"to limit",ex:"The work is confined to office."},
+{word:"inclement",part:"adjective",def:"harsh weather",ex:"Inclement weather delayed flights."},
+{word:"merger",part:"noun",def:"company combination",ex:"The merger was approved."},
+{word:"urge",part:"verb/noun",def:"strongly advise",ex:"They urged action."},
+
+// ===== CUSTOM WORD SET 6 =====
+
+{word:"confront",part:"verb",def:"face directly",ex:"He confronted the issue."},
+{word:"disparate",part:"adjective",def:"very different",ex:"They have disparate views."},
+{word:"curb",part:"verb",def:"to control or limit",ex:"The law aims to curb crime."},
+{word:"turnout",part:"noun",def:"number of people attending",ex:"The event had high turnout."},
+{word:"wade",part:"verb",def:"walk through water",ex:"He waded across the river."},
+{word:"admire",part:"verb",def:"respect or like",ex:"I admire her work."},
+{word:"disgust",part:"noun/verb",def:"strong dislike",ex:"The smell disgusted him."},
+{word:"applause",part:"noun",def:"clapping approval",ex:"The audience gave applause."},
+{word:"enthusiastic",part:"adjective",def:"very excited",ex:"She is enthusiastic about work."},
+{word:"retirement",part:"noun",def:"stopping work",ex:"He plans for retirement."},
+
+{word:"spoilage",part:"noun",def:"food decay",ex:"Spoilage caused losses."},
+{word:"formerly",part:"adverb",def:"previously",ex:"He was formerly a manager."},
+{word:"pursuit",part:"noun",def:"activity or goal",ex:"Knowledge is a worthy pursuit."},
+{word:"disseminate",part:"verb",def:"spread widely",ex:"They disseminated information."},
+{word:"interpretation",part:"noun",def:"explanation",ex:"His interpretation was correct."},
+{word:"disposal",part:"noun",def:"getting rid of",ex:"Waste disposal is important."},
+{word:"solely",part:"adverb",def:"only",ex:"She is solely responsible."},
+{word:"thorough",part:"adjective",def:"complete",ex:"He did a thorough check."},
+{word:"reform",part:"noun/verb",def:"improve or change system",ex:"They reformed the policy."},
+{word:"constitute",part:"verb",def:"form or make up",ex:"Women constitute half the staff."},
+
+{word:"retain",part:"verb",def:"to keep",ex:"The company retains talent."},
+{word:"endorse",part:"verb",def:"support or approve",ex:"The manager endorsed the idea."},
+{word:"alter",part:"verb",def:"to change",ex:"They altered the design."},
+{word:"in depth",part:"phrase",def:"in detail",ex:"We studied it in depth."},
+{word:"senate",part:"noun",def:"legislative group",ex:"The senate approved the bill."},
+{word:"compose",part:"verb",def:"create or write",ex:"She composed an email."},
+{word:"implement",part:"verb",def:"carry out",ex:"They implemented changes."},
+{word:"expedited",part:"adjective",def:"sped up",ex:"The process was expedited."},
+{word:"persistent",part:"adjective",def:"continuing firmly",ex:"He is persistent in work."},
+{word:"assess",part:"verb",def:"evaluate",ex:"They assessed the risk."},
+
+{word:"thread",part:"noun",def:"thin line or string",ex:"The thread broke."},
+{word:"botanic",part:"adjective",def:"related to plants",ex:"The botanic garden is large."},
+{word:"supplement",part:"noun/verb",def:"add extra",ex:"Vitamins supplement diet."},
+{word:"specimen",part:"noun",def:"sample",ex:"The lab tested a specimen."},
+{word:"distract",part:"verb",def:"take attention away",ex:"Noise distracted him."},
+{word:"eventual",part:"adjective",def:"final outcome",ex:"Success was eventual."},
+{word:"insult",part:"noun/verb",def:"offend",ex:"That comment insulted her."},
+{word:"authorities",part:"noun",def:"officials",ex:"Authorities closed the road."},
+{word:"illuminate",part:"verb",def:"light up or explain",ex:"The lamp illuminates the room."},
+{word:"diplomat",part:"noun",def:"government representative",ex:"The diplomat attended the meeting."},
+
+// ===== TOEIC PHRASES (100) =====
+
+{word:"make a decision",part:"phrase",def:"to decide",ex:"Make a decision quickly"},
+{word:"meet a deadline",part:"phrase",def:"finish on time",ex:"Meet the deadline"},
+{word:"reach an agreement",part:"phrase",def:"agree",ex:"Reach agreement soon"},
+{word:"take responsibility",part:"phrase",def:"be accountable",ex:"Take responsibility"},
+{word:"provide support",part:"phrase",def:"give help",ex:"Provide support"},
+
+{word:"conduct a meeting",part:"phrase",def:"run meeting",ex:"Conduct meeting"},
+{word:"gain experience",part:"phrase",def:"get experience",ex:"Gain experience"},
+{word:"raise awareness",part:"phrase",def:"increase knowledge",ex:"Raise awareness"},
+{word:"achieve results",part:"phrase",def:"get outcome",ex:"Achieve results"},
+{word:"improve performance",part:"phrase",def:"do better",ex:"Improve performance"},
+
+{word:"increase efficiency",part:"phrase",def:"be more productive",ex:"Increase efficiency"},
+{word:"reduce costs",part:"phrase",def:"lower expenses",ex:"Reduce costs"},
+{word:"handle complaints",part:"phrase",def:"manage issues",ex:"Handle complaints"},
+{word:"deliver results",part:"phrase",def:"produce outcome",ex:"Deliver results"},
+{word:"build relationships",part:"phrase",def:"connect with people",ex:"Build relationships"},
+
+{word:"develop skills",part:"phrase",def:"improve ability",ex:"Develop skills"},
+{word:"follow instructions",part:"phrase",def:"obey directions",ex:"Follow instructions"},
+{word:"set a goal",part:"phrase",def:"define target",ex:"Set a goal"},
+{word:"solve a problem",part:"phrase",def:"fix issue",ex:"Solve a problem"},
+{word:"make progress",part:"phrase",def:"move forward",ex:"Make progress"},
+
+{word:"take action",part:"phrase",def:"act",ex:"Take action"},
+{word:"keep records",part:"phrase",def:"save data",ex:"Keep records"},
+{word:"pay attention",part:"phrase",def:"focus",ex:"Pay attention"},
+{word:"save time",part:"phrase",def:"reduce time",ex:"Save time"},
+{word:"work efficiently",part:"phrase",def:"work well",ex:"Work efficiently"},
+
+{word:"reach a target",part:"phrase",def:"achieve goal",ex:"Reach target"},
+{word:"submit a report",part:"phrase",def:"send report",ex:"Submit report"},
+{word:"review performance",part:"phrase",def:"evaluate work",ex:"Review performance"},
+{word:"update information",part:"phrase",def:"refresh data",ex:"Update information"},
+{word:"make improvements",part:"phrase",def:"enhance",ex:"Make improvements"},
+
+{word:"manage resources",part:"phrase",def:"control resources",ex:"Manage resources"},
+{word:"analyze data",part:"phrase",def:"study data",ex:"Analyze data"},
+{word:"present findings",part:"phrase",def:"show results",ex:"Present findings"},
+{word:"coordinate tasks",part:"phrase",def:"organize work",ex:"Coordinate tasks"},
+{word:"monitor progress",part:"phrase",def:"track progress",ex:"Monitor progress"}
+];
+
+// ===== SPLIT =====
+const SET_SIZE = 50;
+let sets = [];
+
+for(let i=0;i<allCards.length;i+=SET_SIZE){
+  sets.push(allCards.slice(i,i+SET_SIZE));
+}
+
+// ===== DROPDOWN =====
+const setSelect = document.getElementById("setSelect");
+
+sets.forEach((_,i)=>{
+  let opt=document.createElement("option");
+  opt.value=i;
+  opt.textContent="Set "+(i+1);
+  setSelect.appendChild(opt);
+});
+
+// ===== SCORE STORAGE =====
+let setScores = JSON.parse(localStorage.getItem("toeicScores") || "{}");
+
+// ===== VARIABLES =====
+let deck=[], current=0, correct=0, hard=0, wrong=[];
+
+// ===== SHUFFLE =====
+function shuffle(a){
+  return [...a].sort(()=>Math.random()-0.5);
+}
+
+// ===== START =====
+function startDeck(){
+  deck = shuffle(sets[setSelect.value]);
+  current=0; correct=0; hard=0; wrong=[];
+  showCard();
+  updateBanner();
+}
+
+setSelect.addEventListener("change", startDeck);
+
+// ===== SHOW CARD =====
+function showCard(){
+  if(current>=deck.length){
+    endRound();
+    return;
+  }
+
+  let c = deck[current];
+
+  frontWord.textContent = c.word;
+  frontPart.textContent = c.part;
+  backDef.textContent = c.def;
+  backEx.textContent = c.ex;
+
+  cardScene.classList.remove("flipped");
+
+  progressText.textContent =
+    `${current+1}/${deck.length} • ✓${correct} • ✗${hard}`;
+}
+
+// ===== ANSWER =====
+function answer(ok){
+  if(ok){
+    correct++;
+  } else {
+    hard++;
+    wrong.push(deck[current]);
+  }
+
+  current++;
+  showCard();
+}
+
+function nextCard(){
+  current++;
+  showCard();
+}
+
+// ===== END ROUND =====
+function endRound(){
+
+  let percent = Math.round(correct / deck.length * 100);
+
+  alert(`Score: ${correct}/${deck.length} (${percent}%)`);
+
+  // ✅ SAVE BEST SCORE
+  const set = setSelect.value;
+
+  if(!setScores[set] || percent > setScores[set]){
+    setScores[set] = percent;
+    localStorage.setItem("toeicScores", JSON.stringify(setScores));
+  }
+
+  updateBanner();
+
+  // ✅ SHOW WRONG WORDS
+  if(wrong.length){
+    let list = wrong.map(w => w.word).join(", ");
+    if(confirm(`Retry wrong words?\n\n${list}`)){
+      retryWrong();
+    }
+  }
+}
+
+// ===== RETRY WRONG =====
+function retryWrong(){
+  deck = shuffle(wrong);
+  current=0; correct=0; hard=0; wrong=[];
+  showCard();
+}
+
+// ===== BANNER =====
+function updateBanner(){
+  const set = setSelect.value;
+  const best = setScores[set] || 0;
+
+  banner.textContent = `Set ${+set+1} • Best: ${best}%`;
+}
+
+// ===== SPEAK =====
+function speakWord(e){
+  e.stopPropagation();
+  let s = new SpeechSynthesisUtterance(frontWord.textContent);
+  s.lang="en-US";
+  speechSynthesis.speak(s);
+}
+
+// ===== FLIP =====
+function flipCard(){
+  cardScene.classList.toggle("flipped");
+}
+
+// INIT
+startDeck();
+
+</script>
+
+
+</body>
+</html>
